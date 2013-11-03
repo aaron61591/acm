@@ -43,6 +43,8 @@ void deleteBd(ChessBd&);
 SeqId Bd2SeqId(ChessBd&);
 ChessBd& SeqId2Bd(SeqId);
 bool isExisted(SeqId);
+size_t getLowerCount(Chess, set<Chess>&);
+size_t factorial (size_t);
 
 Queue<SeqId> queue;
 const size_t NUM = 9;
@@ -160,8 +162,14 @@ void deleteBd(ChessBd& chessBd) {
 
 SeqId Bd2SeqId(ChessBd& chessBd) {
 
-    SeqId tmp = 0;
-    return tmp;
+    SeqId seqId = 0;
+    set<Chess> tmpSet;
+    for (size_t i = 0; i < NUM; ++i) {
+        Chess chess = chessBd.info[i];
+        tmpSet.insert(chess);
+        seqId += getLowerCount(chess, tmpSet) * factorial(NUM - 1 - i);
+    }
+    return seqId;
 }
 
 ChessBd& SeqId2Bd(SeqId seqId) {
@@ -169,6 +177,28 @@ ChessBd& SeqId2Bd(SeqId seqId) {
     ChessBd* chessBd = new ChessBd;
     chessBd->info = new Chess[NUM];
     return *chessBd;
+}
+
+size_t getLowerCount(Chess chess, set<Chess>& tmpSet) {
+
+    size_t count = 0;
+    while (chess != 0) {
+        if (tmpSet.count(--chess) == 0) {
+            ++count;
+        }
+    }
+    //cout<<"count: "<<count<<endl;
+    return count;
+}
+
+size_t factorial (size_t num) {
+
+    size_t result = num;
+    while (num != 1 && num != 0) {
+        result *= --num;
+    }
+    //cout<<"factorial: "<<result<<endl;
+    return result;
 }
 
 bool isExisted(SeqId seqId) {
@@ -183,9 +213,9 @@ int main () {
         cin>>init[i];
     }
     ChessBd chessBd;
-    cout<<sizeof(chessBd)<<endl;
-    exit(0);
     chessBd.info = init;
+    cout<<Bd2SeqId(chessBd)<<endl;
+    exit(0);
     queue.push(Bd2SeqId(chessBd));
     play();
     return 0;
