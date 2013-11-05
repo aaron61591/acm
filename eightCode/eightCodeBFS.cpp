@@ -53,7 +53,7 @@ Chess getChess(size_t, set<Chess>&);
 Queue<SeqId> queue;
 vector<Path> pathList;
 const size_t NUM = 9;
-const size_t LINE_NUM = 3;
+const unsigned short LINE_NUM = 3;
 
 void play() {
 
@@ -63,8 +63,7 @@ void play() {
 
 Pos getZeroPos(ChessBd& chessBd) {
 
-    for (size_t i = 0; i< NUM; ++i) {
-        cout<<chessBd.info[i]<<endl;
+    for (size_t i = 0; i < NUM; ++i) {
         if (chessBd.info[i] == 0) {
             return i;
         }
