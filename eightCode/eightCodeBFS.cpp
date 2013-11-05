@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <set>
+#include <vector>
 
 #include "../common/queue.h"
 
@@ -33,8 +34,9 @@ struct Path {
 
 void play();
 Pos getZeroPos(ChessBd&);
-void forward(ChessBd&);
+void forward(SeqId);
 ChessBd& initBd(ChessBd&);
+Path& initPath(SeqId, SeqId);
 void up(ChessBd&);
 void down(ChessBd&);
 void left(ChessBd&);
@@ -44,72 +46,97 @@ SeqId Bd2SeqId(ChessBd&);
 ChessBd& SeqId2Bd(SeqId);
 bool isExisted(SeqId);
 size_t getLowerCount(Chess, set<Chess>&);
-size_t factorial (size_t);
+size_t factorial(size_t);
+void print(ChessBd&, string);
+Chess getChess(size_t, set<Chess>&);
 
 Queue<SeqId> queue;
+vector<Path> pathList;
 const size_t NUM = 9;
 const size_t LINE_NUM = 3;
 
 void play() {
 
     SeqId seqId = queue.remove();
-    ChessBd chessBd = SeqId2Bd(seqId);
-    //forward(chessBd);
+    forward(seqId);
 }
-
 
 Pos getZeroPos(ChessBd& chessBd) {
 
     for (size_t i = 0; i< NUM; ++i) {
+        cout<<chessBd.info[i]<<endl;
         if (chessBd.info[i] == 0) {
             return i;
         }
     }
 }
 
-void forward(ChessBd& chessBd) {
+void forward(SeqId fatherId) {
 
+    ChessBd chessBd = SeqId2Bd(fatherId);
+    print(chessBd, "round");//TODO FT
     chessBd.zeroPos = getZeroPos(chessBd);
     if (chessBd.zeroPos >= LINE_NUM) {
         ChessBd chessBdUp = initBd(chessBd);
         up(chessBdUp);
-        //TODO
         SeqId seqId = Bd2SeqId(chessBdUp);
+        if (seqId == 0) {
+            print(chessBdUp, "Finish!");
+            exit(0);
+        }
         if (!isExisted(seqId)) {
             queue.push(seqId);
+            Path path = initPath(fatherId, seqId);
+            pathList.push_back(path);
         }
         deleteBd(chessBdUp);
     }
     if (chessBd.zeroPos % LINE_NUM != 0) {
         ChessBd chessBdLeft = initBd(chessBd);
         left(chessBdLeft);
-        //TODO
         SeqId seqId = Bd2SeqId(chessBdLeft);
+        if (seqId == 0) {
+            print(chessBdLeft, "Finish!");
+            exit(0);
+        }
         if (!isExisted(seqId)) {
             queue.push(seqId);
+            Path path = initPath(fatherId, seqId);
+            pathList.push_back(path);
         }
         deleteBd(chessBdLeft);
     }
     if ((chessBd.zeroPos + 1) % LINE_NUM != 0) {
         ChessBd chessBdRight = initBd(chessBd);
         right(chessBdRight);
-        //TODO
         SeqId seqId = Bd2SeqId(chessBdRight);
+        if (seqId == 0) {
+            print(chessBdRight, "Finish!");
+            exit(0);
+        }
         if (!isExisted(seqId)) {
             queue.push(seqId);
+            Path path = initPath(fatherId, seqId);
+            pathList.push_back(path);
         }
         deleteBd(chessBdRight);
     }
     if (chessBd.zeroPos < NUM - LINE_NUM) {
         ChessBd chessBdDown = initBd(chessBd);
         down(chessBdDown);
-        //TODO
         SeqId seqId = Bd2SeqId(chessBdDown);
+        if (seqId == 0) {
+            print(chessBdDown, "Finish!");
+            exit(0);
+        }
         if (!isExisted(seqId)) {
             queue.push(seqId);
+            Path path = initPath(fatherId, seqId);
+            pathList.push_back(path);
         }
         deleteBd(chessBdDown);
     }
+    deleteBd(chessBd);
 }
 
 ChessBd& initBd(ChessBd& father) {
@@ -119,6 +146,14 @@ ChessBd& initBd(ChessBd& father) {
     Chess test;
     memcpy(son->info, father.info, sizeof(test) * NUM);
     return *son;
+}
+
+Path& initPath(SeqId father, SeqId son) {
+
+    Path* path = new Path;
+    path->father = father;
+    path->son = son;
+    return *path;
 }
 
 void up(ChessBd& chessBd) {
@@ -176,7 +211,32 @@ ChessBd& SeqId2Bd(SeqId seqId) {
 
     ChessBd* chessBd = new ChessBd;
     chessBd->info = new Chess[NUM];
+    chessBd->zeroPos = 0;
+    set<Chess> tmpSet;
+    for (int i = 0; i < NUM; ++i) {
+        size_t count = 0;
+        if (i != NUM -1) {
+            count = seqId / factorial(NUM - 1 - i);
+        }
+        if (count != 0) {
+            seqId -= count * factorial(NUM - 1 -i);
+        }
+        Chess chess = getChess(count, tmpSet);
+        chessBd->info[i] = chess;
+    }
     return *chessBd;
+}
+
+Chess getChess(size_t count, set<Chess>& tmpSet) {
+
+    Chess chess = 0;
+    for (size_t i = 0; i < NUM; ++i) {
+        if (tmpSet.count(i) == 0) {
+            chess = i + count;
+            tmpSet.insert(chess);
+            return chess;
+        }
+    }
 }
 
 size_t getLowerCount(Chess chess, set<Chess>& tmpSet) {
@@ -203,7 +263,25 @@ size_t factorial (size_t num) {
 
 bool isExisted(SeqId seqId) {
 
-    return true;
+    for(vector<Path>::iterator iter = pathList.begin();
+            iter != pathList.end(); ++iter) {
+        if (iter->son == seqId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void print (ChessBd &chessBd, string title) {
+
+    cout<<endl<<"============="<<title<<"============="<<endl;
+    cout<<"chess board: "<<endl;
+    for (size_t i = 0; i < NUM; ++i) {
+        cout<<chessBd.info[i]<<" "<<ends;
+        if ((i + 1) % LINE_NUM == 0)
+            cout<<endl;
+    }
+    cout<<"ZeroPosition: "<<chessBd.zeroPos<<endl;
 }
 
 int main () {
@@ -214,8 +292,6 @@ int main () {
     }
     ChessBd chessBd;
     chessBd.info = init;
-    cout<<Bd2SeqId(chessBd)<<endl;
-    exit(0);
     queue.push(Bd2SeqId(chessBd));
     play();
     return 0;
